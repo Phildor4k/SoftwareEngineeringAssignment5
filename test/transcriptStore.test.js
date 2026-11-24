@@ -54,6 +54,27 @@ describe("TranscriptStore", () => {
     assert.deepEqual(store.getStudentIDs(), [firstID]);
     assert.throws(() => store.deleteStudent(secondID), /Student not found/);
   });
+  refactor/REF-201-shared-validation
+
+  test("REF-201: addGrade and changeGrade share the same course and grade validation", () => {
+    const studentID = store.addStudent("Ivy");
+    store.addGrade(studentID, "CS360", 80);
+
+    for (const write of [
+      (course, grade) => store.addGrade(studentID, course, grade),
+      (course, grade) => store.changeGrade(studentID, course, grade),
+    ]) {
+      assert.throws(() => write("   ", 90), /Course name is required/);
+      assert.throws(() => write(undefined, 90), /Course name is required/);
+      for (const badGrade of [-1, 101, 9.5, "abc", NaN]) {
+        assert.throws(
+          () => write("CS360", badGrade),
+          /Grade must be an integer from 0 to 100/,
+        );
+      }
+    }
+    assert.equal(store.getGrade(studentID, " cs360 "), 80);
+  });
 bugfix/BUG-102-duplicate-grade
 
   test("BUG-102: a second grade for the same student and course is rejected", () => {
@@ -90,6 +111,6 @@ bugfix/BUG-102-duplicate-grade
     store.deleteStudent(studentID);
 
     assert.equal(store.getGrade(studentID, "CS360"), undefined);
-    assert.throws(() => store.getTranscript(studentID), /Student not found/); main main
+    assert.throws(() => store.getTranscript(studentID), /Student not found/); main main main
   });
 });
