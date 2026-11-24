@@ -54,4 +54,24 @@ describe("TranscriptStore", () => {
     assert.deepEqual(store.getStudentIDs(), [firstID]);
     assert.throws(() => store.deleteStudent(secondID), /Student not found/);
   });
+
+  test("REF-201: addGrade and changeGrade share the same course and grade validation", () => {
+    const studentID = store.addStudent("Ivy");
+    store.addGrade(studentID, "CS360", 80);
+
+    for (const write of [
+      (course, grade) => store.addGrade(studentID, course, grade),
+      (course, grade) => store.changeGrade(studentID, course, grade),
+    ]) {
+      assert.throws(() => write("   ", 90), /Course name is required/);
+      assert.throws(() => write(undefined, 90), /Course name is required/);
+      for (const badGrade of [-1, 101, 9.5, "abc", NaN]) {
+        assert.throws(
+          () => write("CS360", badGrade),
+          /Grade must be an integer from 0 to 100/,
+        );
+      }
+    }
+    assert.equal(store.getGrade(studentID, " cs360 "), 80);
+  });
 });
