@@ -54,6 +54,23 @@ describe("TranscriptStore", () => {
     assert.deepEqual(store.getStudentIDs(), [firstID]);
     assert.throws(() => store.deleteStudent(secondID), /Student not found/);
   });
+bugfix/BUG-102-duplicate-grade
+
+  test("BUG-102: a second grade for the same student and course is rejected", () => {
+    const studentID = store.addStudent("Sam");
+    store.addGrade(studentID, "cs360", 70);
+
+    assert.throws(
+      () => store.addGrade(studentID, " CS360 ", 95),
+      /Grade already exists for course CS360/,
+    );
+    assert.equal(store.getGrade(studentID, "CS360"), 70);
+
+    // other courses are still accepted, and changeGrade still corrects a grade
+    assert.equal(store.addGrade(studentID, "MATH101", 80).grade, 80);
+    assert.equal(store.changeGrade(studentID, "CS360", 95).grade, 95);
+    assert.equal(store.getGrade(studentID, "CS360"), 95);
+  });
  bugfix/BUG-103-name-search
   test("BUG-103: name search trims whitespace and ignores case", () => {
     const studentID = store.addStudent("Grace Lee");
@@ -73,6 +90,6 @@ describe("TranscriptStore", () => {
     store.deleteStudent(studentID);
 
     assert.equal(store.getGrade(studentID, "CS360"), undefined);
-    assert.throws(() => store.getTranscript(studentID), /Student not found/); main
+    assert.throws(() => store.getTranscript(studentID), /Student not found/); main main
   });
 });
